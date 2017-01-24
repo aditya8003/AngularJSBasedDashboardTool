@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
     <title>Dashboard Tool</title>
@@ -7,7 +7,6 @@
     <script src="http://rawgit.com/YousefED/ElasticUI/master/examples/demo/lib/elasticsearch.angular.js"></script>
     <script src="http://rawgit.com/YousefED/ElasticUI/master/examples/demo/lib/elastic.js"></script>
     <script src="http://rawgit.com/YousefED/ElasticUI/master/dist/elasticui.min.js"></script>
-     
     <style>
         .sidebar {
             position: fixed;
@@ -29,20 +28,19 @@
         }
     </style>
     <script>
+
+	
         angular
             .module('tutorial', ['elasticui'])
-	    .controller('MyController', function ($scope, $window) {
-            $scope.Sellers = [{
-                Id: 1,
-                Name: 'momentum59parts'
-            }, {
-                Id: 2,
-                Name: 'autozone'
-            }, {
-                Id: 3,
-                Name: 'tasca'
-            }];
-	$scope.Source = [{
+			.controller('MyController', function ($scope, userRepoService){
+     
+     var onFetchError = function(message){
+       $scope.error = "Error Fetching Users. Message:" +message;
+     };
+     
+     var onFetchCompleted = function(data){
+        $scope.Sellers =data;
+		$scope.Source = [{
                 Id: 1,
                 Name: 'Inventory Received'
             }, {
@@ -52,44 +50,62 @@
                 Id: 3,
                 Name: 'Inventory Sent'
             }];
-	
-        })
+     };
+     
+     var getUsers = function(){
+       userRepoService.get().then(onFetchCompleted,onFetchError);
+     };
+     
+     getUsers();     
+     
+   })
             .constant('euiHost', 'http://localhost:9200'); // ACTION: change to cluster address
-	    
+			
+				(function(){
+    
+    var userRepoService = function($http){
+      
+      var getUsers = function(username){
+			return $http.get("http://localhost:8080/CrunchifyRESTJerseyExample/crunchify/ftocservice/34")
+						   .then(function(response){
+                           return response.data; 
+                        });
+      };
+  
+      return {
+          get: getUsers
+      };
+        
+    };
+    
+    var module = angular.module("tutorial");
+    module.factory("userRepoService", userRepoService);
+    
+}());
     </script>
 </head>
-<body ng-app="tutorial" eui-index="'embulk'"><!-- ACTION: change to index name -->
+<body ng-app="tutorial" eui-index="'searchtest'"><!-- ACTION: change to index name -->
 
     <div class="container-fluid" ng-controller="MyController">
- 	
-      
-   
+
         <div class="row">
             <div class="col-xs-3 sidebar">
-		
-		<h3>Select Seller</h3>
-		<select ng-model="sellerid" ng-options="Seller.Name for Seller in Sellers">
+                <h3>Select Seller</h3>
+						<select ng-model="sellerid" ng-options="Seller.ebay_seller_id for Seller in Sellers">
        		</select>
-		<! <select id="sellerid2" >
-     		<! <option  ng-model="sellerid2" ng-repeat="doc in indexVM.results.hits.hits" 			v <!value="{{doc._source}}">{{doc._source | json | limitTo: 20}}</option>
-   		<! </select>
-		<!<select ng-model="sellerid2" ng-options="doc in indexVM.results.hits.hits">
-       		<!</select>
-               <! <h3>Search</h3>
+				<br>
 		<br>
-		<br>
-                <eui-searchbox field="'product sku'"></eui-searchbox> <!-- ACTION: change to field to search on -->
+                <eui-searchbox field="'ebay_seller_id'"></eui-searchbox> <!-- ACTION: change to field to search on -->
                <br>
-
-
-                <h3>Results Per Page</h3>
+				
+				<h3>Results Per Page</h3>
                 <select ng-model="indexVM.pageSize">
                     <option ng-repeat="item in [10, 20, 50, 100]">{{item}}</option>
                 </select>
             </div>
             <div class="col-xs-9 col-xs-offset-3 main">
                 <div class="instructions panel panel-primary">
-                <b>Last File Received :</b> 1/09/2017 9:00 AM <br>  
+                    <b>Last File Received :</b> 1/09/2017 9:00 AM <br>  
                 <b>Last File Sent :</b>  1/09/2017 9:00 AM  <br> 
 		<b># Parts received :</b> 20 <br> 
                 <b># Product Non matches :</b> 20 <br>  
@@ -100,9 +116,10 @@
 		<h3>Select Data Extract Source</h3>
 		<select ng-model="source" ng-options="Source.Name for Source in Source">
        		</select>
+
                 <h1>Results</h1>
                 <ul>
-                    <li ng-repeat="doc in indexVM.results.hits.hits | filter : sellerid.Name">
+                  <li ng-repeat="doc in indexVM.results.hits.hits | filter : sellerid.ebay_seller_id">
                         {{doc._source | json | limitTo: 500}} <!-- OPTIONAL: display more meaningful data instead of json -->
                     </li>
                 </ul>
